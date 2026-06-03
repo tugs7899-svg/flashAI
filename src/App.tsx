@@ -229,18 +229,58 @@ export default function App() {
 
   // Handle selected files (drag & drop / click selection)
   const processImageBytes = (file: File) => {
+    // แสดงสถานะโหลดทันที เพื่อไม่ให้หน้าจอค้างระหว่างรอมือถือประมวลผลรูป
+    setIsLoading(true);
+    setErrorMessage(null);
+
     const reader = new FileReader();
-    reader.onload = () => {
-      const base64String = reader.result as string;
-      setImagePreview(base64String);
-      setErrorMessage(null);
-      setScanResult(null);
-      // Trigger scan operation instantly
-      triggerAIScan(base64String, file.type);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // 1. กำหนดความกว้าง/ยาวสูงสุด (800px เพียงพอมากสำหรับให้ AI วิเคราะห์)
+        const MAX_SIZE = 800;
+        let width = img.width;
+        let height = img.height;
+
+        // 2. คำนวณสัดส่วนรูปภาพใหม่ไม่ให้เสียทรง
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        // 3. สร้าง Canvas เพื่อวาดรูปใหม่ที่เล็กลง
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // 4. แปลงภาพเป็น JPEG และลดคุณภาพลงเหลือ 70% (0.7) เพื่อลดขนาดไฟล์ให้เล็กจิ๋ว (ประมาณ 100-200 KB)
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+          
+          setImagePreview(compressedBase64);
+          setScanResult(null);
+          // ส่งภาพที่บีบอัดแล้วไปให้ AI
+          triggerAIScan(compressedBase64, "image/jpeg");
+        }
+      };
+      img.src = e.target?.result as string;
     };
+    
     reader.onerror = () => {
+      setIsLoading(false);
       setErrorMessage("ไม่สามารถเปิดอ่านไฟล์รูปภาพได้สำเร็จ");
     };
+    
     reader.readAsDataURL(file);
   };
 
