@@ -1,0 +1,10 @@
+{
+  "name": "AI Trash Sorter",
+  "description": "แอปพลิเคชันวิเคราะห์และแนะแนวการคัดแยกขยะอัจฉริยะด้วยระบบ AI (แอปสแกนแยกขยะ)",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
